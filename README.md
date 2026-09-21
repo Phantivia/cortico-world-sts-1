@@ -60,7 +60,10 @@ descriptions come from the installed game's language files and current state.
 See [the protocol contract](docs/protocol.md) for action and receipt semantics.
 
 `sts.state` reports externally observed decision changes. A tool's state is
-returned in its receipt without a second wakeup. `sts.connection` reports loss of
+returned in its receipt. `sts.decision` reports the ready revision once at the end
+of a host turn that executed a game action, so a round cap does not leave the
+game waiting without a decision event. A turn with no game action emits none.
+`sts.connection` reports loss of
 the sidecar; `sts_observe` attempts a new authenticated connection.
 
 ## Validation

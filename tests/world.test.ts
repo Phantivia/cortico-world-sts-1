@@ -62,4 +62,13 @@ describe('StS World', () => {
     expect(server.mutations).toBe(0);
     await expect(call('sts_observe')).rejects.toThrow('not started');
   });
+  it('emits one decision at the turn boundary after an executed action and stays idle without further actions', async () => {
+    const { world, server, store, call } = await fixture();
+    world.onTurnEnded(); expect(store.latestCursor()).toBe(1);
+    await call('sts_do', { sessionId: server.state.sessionId, revision: server.state.revision, actionId: server.state.actions[0].id });
+    world.onTurnEnded();
+    expect(store.get(2)?.type).toBe('sts.decision');
+    expect(JSON.parse(store.get(2)!.text)).toMatchObject({ ready: true, stateInLastToolReceipt: true });
+    world.onTurnEnded(); expect(store.latestCursor()).toBe(2);
+  });
 });

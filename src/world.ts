@@ -27,6 +27,7 @@ export class StsWorld implements World {
   private state: 'offline' | 'loading' | 'online' | 'error' = 'offline';
   private detail = '';
   private published = '';
+  private decisionAfterTurn = false;
 
   constructor(private readonly opts: StsWorldOptions) {
     this.bridge.on('snapshot', (snapshot: StsSnapshot) => { void this.publish(snapshot); });
@@ -66,9 +67,18 @@ export class StsWorld implements World {
     }
   }
   async stop(): Promise<void> {
-    this.state = 'offline'; this.stopSignal.abort(); this.bridge.close(); this.host = null; this.published = '';
+    this.state = 'offline'; this.stopSignal.abort(); this.bridge.close(); this.host = null; this.published = ''; this.decisionAfterTurn = false;
   }
   onHandoffEnded(): void { this.published = ''; if (this.bridge.snapshot) void this.publish(this.bridge.snapshot); }
+  onTurnEnded(): void {
+    const snapshot = this.bridge.snapshot;
+    const pending = this.decisionAfterTurn;
+    this.decisionAfterTurn = false;
+    if (pending && snapshot?.ready && this.state === 'online') {
+      void this.event('sts.decision', JSON.stringify({ sessionId: snapshot.sessionId, revision: snapshot.revision,
+        screen: snapshot.screen, ready: true, stateInLastToolReceipt: true }));
+    }
+  }
 
   private async call(name: string, args: Record<string, unknown>, ctx: ToolCallContext): Promise<ToolOutcome> {
     ctx.signal?.throwIfAborted();
@@ -94,6 +104,7 @@ export class StsWorld implements World {
         timeoutMs: this.opts.cfg.actionTimeoutMs, cursorDurationMs: this.opts.cfg.cursorDurationMs,
       }, this.opts.cfg.actionTimeoutMs + 3000, ctx.signal);
       if (!result.receipt) throw new Error('Missing StS action receipt');
+      if (result.receipt.outcome === 'executed') this.decisionAfterTurn = true;
       this.published = `${result.receipt.snapshot.sessionId}:${result.receipt.snapshot.revision}`;
       return { text: JSON.stringify({ ...result.receipt, snapshot: renderSnapshot(result.receipt.snapshot) }), ...(result.receipt.outcome !== 'executed' ? { failed: true as const } : {}) };
     } finally { this.busy = false; }

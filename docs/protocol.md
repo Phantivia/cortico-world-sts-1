@@ -74,6 +74,9 @@ input still in cursor motion, but cannot undo an input already sent to the game.
 World stop disconnects and leaves the game available to the operator.
 
 State changes originating outside a tool emit `sts.state`. Tool results carry
-their own snapshots; they do not generate duplicate decision events. Socket
+their own snapshots. After a host turn that executed an action, `sts.decision`
+reports the current ready revision once, referring to the last tool receipt.
+This turn-boundary fallback preserves a decision opportunity when the host ends
+the tool loop at its round cap. A turn without an executed action produces none. Socket
 failures emit `sts.connection`. Screenshots are PNG framebuffer captures and
 include the Mod-rendered cursor without moving the operating-system pointer.
