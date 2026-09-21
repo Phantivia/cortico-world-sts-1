@@ -1,0 +1,25 @@
+{
+  "name": "cortico-world-sts",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Slay the Spire World for Cortico with a Mod sidecar and an in-game cursor",
+  "license": "MIT",
+  "keywords": ["cortico-world", "cortico", "slay-the-spire"],
+  "engines": { "node": ">=22" },
+  "packageManager": "pnpm@11.5.0",
+  "main": "./src/index.ts",
+  "cortico": { "kind": "world", "api": 5 },
+  "files": ["src", "mod", "scripts", "docs", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build:mod": "node scripts/build-mod.mjs",
+    "install:mod": "node scripts/install-mod.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
