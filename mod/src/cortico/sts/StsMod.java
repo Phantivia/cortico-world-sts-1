@@ -95,7 +95,7 @@ public final class StsMod implements PreUpdateSubscriber, PostUpdateSubscriber, 
                     else {
                         try {
                             pending.action.execute(); pending.submitted = true; pending.submittedAt = System.nanoTime(); Cursor.press();
-                        } catch (Exception e) { finish("rejected", e.getMessage()); }
+                        } catch (Exception e) { finish("unknown", "Game input failed; observe before another action: " + e); }
                     }
                 }
             }

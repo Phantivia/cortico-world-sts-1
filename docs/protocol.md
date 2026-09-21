@@ -69,7 +69,8 @@ that state; it does not claim a card killed an enemy or a run was won.
 
 Only one action is in flight. Requests are never replayed after timeout or
 reconnect. Duplicate IDs are rejected. A timeout after input was submitted is
-`unknown`; observe before deciding whether to act again. Disconnect cancels an
+`unknown`; an exception while applying input is also `unknown`, because the game
+may have already changed. Observe before deciding whether to act again. Disconnect cancels an
 input still in cursor motion, but cannot undo an input already sent to the game.
 World stop disconnects and leaves the game available to the operator.
 
