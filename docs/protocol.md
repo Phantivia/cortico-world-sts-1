@@ -48,7 +48,9 @@ object references stay inside the Mod. IDs are valid only with their snapshot.
 The run contains act/floor, health, gold, character, ascension, visible map,
 relics, deck, potions, and keys. Combat adds energy, block, powers, stance, orbs,
 hand, unordered draw-pile contents, discard/exhaust piles, and visible enemy
-intents. Card descriptions include resolved damage/block/magic values. Screen
+intents. Hand-card descriptions include current damage/block/magic values;
+other card locations use base values, including upgrades, so played-card visual
+resets do not change a decision revision. Screen
 state includes full event text, disabled options, prices, rewards, selection
 counts, and selected cards. Face-down matching cards expose only their position.
 

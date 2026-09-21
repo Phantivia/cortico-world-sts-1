@@ -65,7 +65,7 @@ final class Snapshots {
             if (screen.equals("GRID")) for (AbstractCard c : ChoiceScreenUtils.getGridScreenCards()) cards.put(c.uuid.toString(), c);
             if (screen.equals("HAND_SELECT")) for (AbstractCard c : AbstractDungeon.handCardSelectScreen.selectedCards.group) cards.put(c.uuid.toString(), c);
             if (screen.equals("SHOP_SCREEN")) for (AbstractCard c : ChoiceScreenUtils.getShopScreenCards()) cards.put(c.uuid.toString(), c);
-            enrichCards(game, cards);
+            enrichCards(game, cards, false);
             enrichItems(game);
         }
         result.addProperty("screen", screen);
@@ -83,9 +83,13 @@ final class Snapshots {
     }
 
     static JsonObject card(AbstractCard c) {
-        int damage = c.damage < 0 ? c.baseDamage : c.damage;
-        int block = c.block < 0 ? c.baseBlock : c.block;
-        int magic = c.magicNumber < 0 ? c.baseMagicNumber : c.magicNumber;
+        return card(c, AbstractDungeon.player.hand.group.contains(c));
+    }
+
+    private static JsonObject card(AbstractCard c, boolean modified) {
+        int damage = modified && c.damage >= 0 ? c.damage : c.baseDamage;
+        int block = modified && c.block >= 0 ? c.block : c.baseBlock;
+        int magic = modified && c.magicNumber >= 0 ? c.magicNumber : c.baseMagicNumber;
         JsonObject o = new JsonObject();
         o.addProperty("uuid", c.uuid.toString()); o.addProperty("id", c.cardID); o.addProperty("name", c.name);
         o.addProperty("cost", c.costForTurn); o.addProperty("target", c.target.name());
@@ -98,14 +102,14 @@ final class Snapshots {
         return o;
     }
 
-    private static void enrichCards(JsonElement element, Map<String, AbstractCard> cards) {
-        if (element.isJsonArray()) { for (JsonElement e : element.getAsJsonArray()) enrichCards(e, cards); }
+    private static void enrichCards(JsonElement element, Map<String, AbstractCard> cards, boolean modified) {
+        if (element.isJsonArray()) { for (JsonElement e : element.getAsJsonArray()) enrichCards(e, cards, modified); }
         if (!element.isJsonObject()) return;
         JsonObject o = element.getAsJsonObject();
         if (o.has("uuid") && cards.containsKey(o.get("uuid").getAsString())) {
-            for (Map.Entry<String, JsonElement> entry : card(cards.get(o.get("uuid").getAsString())).entrySet()) o.add(entry.getKey(), entry.getValue());
+            for (Map.Entry<String, JsonElement> entry : card(cards.get(o.get("uuid").getAsString()), modified).entrySet()) o.add(entry.getKey(), entry.getValue());
         }
-        for (Map.Entry<String, JsonElement> entry : o.entrySet()) enrichCards(entry.getValue(), cards);
+        for (Map.Entry<String, JsonElement> entry : o.entrySet()) enrichCards(entry.getValue(), cards, modified || entry.getKey().equals("hand"));
     }
 
     private static void enrichItems(JsonObject game) {
