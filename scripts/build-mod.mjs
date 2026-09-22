@@ -11,7 +11,7 @@ export function run(command, args, cwd = root) {
   if (result.status !== 0) throw new Error(`${command} exited with ${result.status}`);
 }
 export function gamePaths(gameDir) {
-  if (!gameDir) throw new Error('Pass the game directory as the first argument or set CORTICO_STS_GAME_DIR');
+  if (!gameDir) throw new Error('Pass the game directory as the first argument or set CORTICO_STS_1_GAME_DIR');
   gameDir = resolve(gameDir);
   const workshop = resolve(gameDir, '../../workshop/content/646570');
   const find = (name, workshopId) => {
@@ -62,5 +62,5 @@ export function build(gameDir) {
   return paths;
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  build(process.argv[2] || process.env.CORTICO_STS_GAME_DIR);
+  build(process.argv[2] || process.env.CORTICO_STS_1_GAME_DIR);
 }

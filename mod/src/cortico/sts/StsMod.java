@@ -23,7 +23,7 @@ import javax.imageio.ImageIO;
 public final class StsMod implements PreUpdateSubscriber, PostUpdateSubscriber, PostRenderSubscriber {
     private final BlockingQueue<Request> incoming = new ArrayBlockingQueue<>(32);
     private final Set<String> seen = new LinkedHashSet<>();
-    private final String token = System.getenv("CORTICO_STS_TOKEN");
+    private final String token = System.getenv("CORTICO_STS_1_TOKEN");
     private volatile Client client;
     private JsonObject snapshot;
     private Pending pending;
@@ -37,12 +37,12 @@ public final class StsMod implements PreUpdateSubscriber, PostUpdateSubscriber, 
     public StsMod() {
         BaseMod.subscribe(this);
         if (token == null || token.length() < 24) {
-            System.err.println("[CorticoSts] Sidecar disabled: CORTICO_STS_TOKEN needs at least 24 characters"); return;
+            System.err.println("[CorticoSts] Sidecar disabled: CORTICO_STS_1_TOKEN needs at least 24 characters"); return;
         }
         Thread server = new Thread(this::listen, "cortico-sts-sidecar"); server.setDaemon(true); server.start();
     }
     private void listen() {
-        int port = Integer.parseInt(System.getenv().getOrDefault("CORTICO_STS_PORT", "27831"));
+        int port = Integer.parseInt(System.getenv().getOrDefault("CORTICO_STS_1_PORT", "27831"));
         try (ServerSocket server = new ServerSocket(port, 1, InetAddress.getByName("127.0.0.1"))) {
             while (true) {
                 Socket socket = server.accept(); socket.setTcpNoDelay(true); socket.setSoTimeout(5000);

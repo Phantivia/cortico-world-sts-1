@@ -31,12 +31,12 @@ discovery. Stop the game before replacing loaded Mod JARs.
 
 Install this directory as a local World extension in Cortico. Enable `worlds.sts-1`
 and set its `gameDir`. Set `launch` to true for World-managed startup. The World
-generates `CORTICO_STS_TOKEN` in the deployment's `.env` when it is missing, then
-passes it and `CORTICO_STS_PORT` to the game process. The launch includes only
+generates `CORTICO_STS_1_TOKEN` in the deployment's `.env` when it is missing, then
+passes it and `CORTICO_STS_1_PORT` to the game process. The launch includes only
 BaseMod, CommunicationMod, and Cortico StS. Other installed mods are not selected.
 
-For a manually launched game, set the same `CORTICO_STS_TOKEN` (at least 24
-characters) and `CORTICO_STS_PORT` in its environment, select the three Mods, and
+For a manually launched game, set the same `CORTICO_STS_1_TOKEN` (at least 24
+characters) and `CORTICO_STS_1_PORT` in its environment, select the three Mods, and
 leave `launch` false. The default port is 27831. Only 127.0.0.1 is bound.
 When a World stops it disconnects; the game remains open. Re-enabling it attaches
 to that game. Neither timeouts nor reconnects replay actions.

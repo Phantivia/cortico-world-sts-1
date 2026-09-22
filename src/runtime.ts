@@ -17,7 +17,7 @@ export function launchGame(cfg: StsConfigSection, token: string, dataDir: string
   try {
     const child = spawn(java, ['-jar', mts!, '--skip-launcher', '--skip-intro', '--mods', 'basemod,CommunicationMod,cortico-sts'], {
       cwd: cfg.gameDir, windowsHide: true, detached: true, stdio: ['ignore', output, output],
-      env: { ...process.env, CORTICO_STS_TOKEN: token, CORTICO_STS_PORT: String(cfg.port) },
+      env: { ...process.env, CORTICO_STS_1_TOKEN: token, CORTICO_STS_1_PORT: String(cfg.port) },
     });
     child.unref(); return child;
   } finally { closeSync(output); }

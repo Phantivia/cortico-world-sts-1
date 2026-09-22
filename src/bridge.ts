@@ -11,7 +11,7 @@ export class StsBridge extends EventEmitter {
 
   async connect(port: number, token: string, timeoutMs: number): Promise<StsSnapshot> {
     this.close();
-    if (token.length < 24) throw new Error('CORTICO_STS_TOKEN must contain at least 24 characters');
+    if (token.length < 24) throw new Error('CORTICO_STS_1_TOKEN must contain at least 24 characters');
     const socket = createConnection({ host: '127.0.0.1', port });
     this.socket = socket;
     socket.setNoDelay(true); socket.setEncoding('utf8');

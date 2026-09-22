@@ -55,7 +55,7 @@ export class StsWorld implements World {
     let token = this.opts.token();
     if (!token && this.opts.cfg.launch) { token = randomBytes(32).toString('hex'); this.opts.storeToken(token); }
     try {
-      if (token.length < 24) throw new Error('Set CORTICO_STS_TOKEN in the deployment .env and game environment, or enable game launch');
+      if (token.length < 24) throw new Error('Set CORTICO_STS_1_TOKEN in the deployment .env and game environment, or enable game launch');
       try { await this.bridge.connect(this.opts.cfg.port, token, 1000); }
       catch (error) {
         if (this.opts.cfg.launch && (error as NodeJS.ErrnoException).code !== 'ECONNREFUSED') throw error;
