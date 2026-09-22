@@ -44,8 +44,8 @@ to that game. Neither timeouts nor reconnects replay actions.
 
 | Tool | Result |
 |---|---|
-| `sts_observe` | Current visible snapshot and available action IDs; `detail:"full"` includes map and master deck |
-| `sts_do` | One action bound to `sessionId`, `revision`, and `actionId`, followed by its receipt and resulting snapshot |
+| `sts_observe` | A complete semantic decision snapshot; `detail:"full"` adds the master deck, pile contents, and map |
+| `sts_do` | One numbered `action` bound to the snapshot's `state` code, followed by the outcome and visible changes |
 | `sts_capture` | PNG of the game framebuffer, including the internal cursor |
 | `sts_input` | Explicit fallback for an in-game key or a click in 1920×1080 coordinates |
 
@@ -54,17 +54,33 @@ shops, campfires, chests, rewards, grid/hand selections, confirmation, cancellat
 and view screens. Actions only appear when the game exposes them. Opening a
 selection ends the current action and lets the agent make the next choice.
 
+Model-facing text uses Chinese game descriptions and short action numbers.
+Cards with identical visible properties share one description; each playable
+card/target retains its own action number. Draw/discard/exhaust piles default to
+counts. The full observation groups duplicate cards and preserves map edges.
+Native JSON, UUIDs, and duplicated card metadata remain inside the sidecar.
+
+Receipts in the same room and screen report changed sections. Omitted sections
+retain their previous meaning, including unchanged action numbers; every receipt
+provides the next state code. Screen/session changes, explicit observations,
+failed actions, and context handoffs refresh the entire current decision. A stale
+code is rejected with a fresh snapshot; it never rebinds an old number to a new action.
+Callers upgrading from the UUID-based tool interface must restart the World,
+read its current tool declarations, and take a new observation before acting.
+
 Draw-pile order, RNG state, enemy move IDs/history, unrevealed matching cards, and
 Runic Dome-hidden intents are excluded. Visible card, potion, relic, and power
 descriptions come from the installed game's language files and current state.
 See [the protocol contract](docs/protocol.md) for action and receipt semantics.
 
-`sts.state` reports externally observed decision changes. A tool's state is
-returned in its receipt. `sts.decision` reports the ready revision once at the end
+`sts.state` coalesces external changes and renders the latest state at delivery.
+If a tool already returned that state, the queued event is dropped. `sts.decision`
+gives a short waiting reminder once at the end
 of a host turn that executed a game action, so a round cap does not leave the
 game waiting without a decision event. A turn with no game action emits none.
 `sts.connection` reports loss of
-the sidecar; `sts_observe` attempts a new authenticated connection.
+the sidecar; `sts_observe` attempts a new authenticated connection. State events
+and observations carry the framework's `snapshot` tag for handoff retention.
 
 ## Validation
 

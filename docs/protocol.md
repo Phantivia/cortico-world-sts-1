@@ -1,4 +1,4 @@
-# `src/protocol.ts`, `mod/src/cortico/sts/StsMod.java`: sidecar contract
+# `src/protocol.ts`, `src/render.ts`, `src/world.ts`, `mod/src/cortico/sts/StsMod.java`: StS contract
 
 The Mod owns game reads and actions on the game thread. Its TCP server binds to
 127.0.0.1. One authenticated World connection controls one game process. Frames
@@ -61,7 +61,12 @@ card identities through enrichment or action labels.
 
 ## Execution and receipts
 
-`sts_do` submits `sessionId`, `revision`, and one `actionId`. The Mod checks that
+`sts_do` accepts a short `state` code and a positive integer `action`. The World
+resolves that number against the snapshot last presented to the agent, verifies
+the code against its current sidecar state, and submits native `sessionId`,
+`revision`, and `actionId`. State codes hash both session and revision. An expired
+code returns a complete current decision without submitting game input.
+The Mod checks that
 snapshot before moving the internal cursor, then checks it again immediately
 before the game mutation. A human action during cursor movement invalidates the
 command. A receipt is `executed`, `rejected`, or `unknown`; accepted transport
@@ -76,9 +81,26 @@ may have already changed. Observe before deciding whether to act again. Disconne
 input still in cursor motion, but cannot undo an input already sent to the game.
 World stop disconnects and leaves the game available to the operator.
 
-State changes originating outside a tool emit `sts.state`. Tool results carry
-their own snapshots. After a host turn that executed an action, `sts.decision`
-reports the current ready revision once, referring to the last tool receipt.
+## Model-facing text and events
+
+Native JSON is rendered as Chinese descriptions. A hand card's effect appears
+once beside its available action numbers and targets; identical cards are grouped
+without merging their executable identities. Relics, powers, potions, event
+options, prices, selection counts, and hidden-intent markers retain their visible
+meaning. Default pile output contains counts. Full observation adds grouped card
+contents and a row-by-row map whose edges point to the next row's columns.
+
+Within the same screen, floor, and session, successful receipts include only
+changed semantic sections. Removed effects are explicitly cleared. The latest
+state code applies to retained action numbers as well as changed ones. Errors,
+screen changes, explicit observation, and context handoff produce self-contained
+decisions; deltas are not tagged as replaceable snapshots.
+
+Only one deferred state event is pending. Its renderer reads the latest cached
+sidecar snapshot at delivery and drops it if a tool has already presented that
+state. Complete state events and observations carry the `snapshot` tag.
+After a host turn that executed an action, `sts.decision` gives a short reminder
+that the last decision still awaits input, without repeating the state body.
 This turn-boundary fallback preserves a decision opportunity when the host ends
 the tool loop at its round cap. A turn without an executed action produces none. Socket
 failures emit `sts.connection`. Screenshots are PNG framebuffer captures and

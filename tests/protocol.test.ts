@@ -25,9 +25,14 @@ describe('StS contracts', () => {
     expect(() => parseMessage(JSON.stringify({ protocol: 1, type: 'result', id: 'a', receipt: { outcome: 'accepted' } }))).toThrow();
   });
   it('requires explicit bounded coordinates for fallback clicks', () => {
-    const base = { sessionId: 'a', revision: 1, kind: 'click', x: 4, y: 5, button: 'left' };
+    const base = { state: 'current-state', kind: 'click', x: 4, y: 5, button: 'left' };
     expect(() => validateActionArgs(base, true)).not.toThrow();
     expect(() => validateActionArgs({ ...base, x: 1921 }, true)).toThrow();
     expect(() => validateActionArgs({ ...base, button: undefined }, true)).toThrow();
+  });
+  it('requires a state reference and a positive integer action number', () => {
+    expect(() => validateActionArgs({ state: 'current-state', action: 1 })).not.toThrow();
+    for (const action of [0, -1, 1.5, '1', undefined]) expect(() => validateActionArgs({ state: 'current-state', action })).toThrow();
+    expect(() => validateActionArgs({ action: 1 })).toThrow();
   });
 });
