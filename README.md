@@ -1,8 +1,9 @@
-# `src/definition.ts`: cortico-world-sts
+# `src/definition.ts`: cortico-world-sts-1
 
-A Cortico World for Slay the Spire. The Mod reads the game on its update thread,
-executes one atomic action at a time, and renders an internal pointer with the
-pixel companion used by the PvZ World. A token-authenticated loopback TCP sidecar
+A [Cortico](https://github.com/Pal-AI-Lab/Cortico) World for Slay the Spire.
+The Mod reads the game on its update thread, executes one atomic action at a
+time, and renders an internal pointer with the pixel companion used by the PvZ
+World. A token-authenticated loopback TCP sidecar
 connects the game to the World.
 
 ## Requirements
@@ -20,7 +21,7 @@ game, ModTheSpire, and BaseMod. Generated JARs remain under ignored directories.
 
 ```powershell
 pnpm install
-pnpm install:mod 'G:\Steam\steamapps\common\SlayTheSpire'
+pnpm install:mod '<game directory>'
 ```
 
 `install:mod` builds `CommunicationMod.jar` and `CorticoSts.jar`, backs up existing
@@ -94,6 +95,8 @@ pnpm build:mod '<game directory>'
 pnpm check:extension '<extension directory>'
 ```
 
+Tests and typechecking resolve `cortico/*` to a framework checkout at `../BOT/src`
+(see `tsconfig.json` and `vitest.config.ts`); adjust both paths for another layout.
 Tests use real loopback sockets and the framework's JSONL event store. They cover
 framing, authentication, stale actions, cancellation, timeout, reconnect, and
 World events. Game/Mod compatibility requires a local game check; automated tests

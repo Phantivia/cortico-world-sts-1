@@ -1,15 +1,40 @@
 {
-  "name": "cortico-world-sts",
+  "name": "cortico-world-sts-1",
   "version": "0.1.0",
   "type": "module",
   "description": "Slay the Spire World for Cortico with a Mod sidecar and an in-game cursor",
   "license": "MIT",
-  "keywords": ["cortico-world", "cortico", "slay-the-spire"],
-  "engines": { "node": ">=22" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Phantivia/cortico-world-sts-1.git"
+  },
+  "homepage": "https://github.com/Phantivia/cortico-world-sts-1#readme",
+  "bugs": {
+    "url": "https://github.com/Phantivia/cortico-world-sts-1/issues"
+  },
+  "keywords": [
+    "cortico-world",
+    "cortico",
+    "slay-the-spire"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "packageManager": "pnpm@11.5.0",
   "main": "./src/index.ts",
-  "cortico": { "kind": "world", "api": 5 },
-  "files": ["src", "mod", "scripts", "docs", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"],
+  "cortico": {
+    "kind": "world",
+    "api": 5
+  },
+  "files": [
+    "src",
+    "mod",
+    "scripts",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
