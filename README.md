@@ -29,7 +29,7 @@ copies, and installs them in the game's `mods` directory. It also copies the loc
 BaseMod JAR there when absent, so launching does not depend on Steam Workshop
 discovery. Stop the game before replacing loaded Mod JARs.
 
-Install this directory as a local World extension in Cortico. Enable `worlds.sts`
+Install this directory as a local World extension in Cortico. Enable `worlds.sts-1`
 and set its `gameDir`. Set `launch` to true for World-managed startup. The World
 generates `CORTICO_STS_TOKEN` in the deployment's `.env` when it is missing, then
 passes it and `CORTICO_STS_PORT` to the game process. The launch includes only
@@ -76,12 +76,12 @@ Runic Dome-hidden intents are excluded. Visible card, potion, relic, and power
 descriptions come from the installed game's language files and current state.
 See [the protocol contract](docs/protocol.md) for action and receipt semantics.
 
-`sts.state` coalesces external changes and renders the latest state at delivery.
-If a tool already returned that state, the queued event is dropped. `sts.decision`
+`sts-1.state` coalesces external changes and renders the latest state at delivery.
+If a tool already returned that state, the queued event is dropped. `sts-1.decision`
 gives a short waiting reminder once at the end
 of a host turn that executed a game action, so a round cap does not leave the
 game waiting without a decision event. A turn with no game action emits none.
-`sts.connection` reports loss of
+`sts-1.connection` reports loss of
 the sidecar; `sts_observe` attempts a new authenticated connection. State events
 and observations carry the framework's `snapshot` tag for handoff retention.
 

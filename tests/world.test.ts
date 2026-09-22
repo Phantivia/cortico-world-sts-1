@@ -30,7 +30,7 @@ async function fixture(deliverInitial = true) {
   const deliver = async () => {
     for (const e of deferred.splice(0)) {
       const rendered = await e.render();
-      if (rendered !== null) await host.pushEvent({ type: e.type, source: 'sts', senderKey: e.senderKey,
+      if (rendered !== null) await host.pushEvent({ type: e.type, source: 'sts-1', senderKey: e.senderKey,
         ts: new Date().toISOString(), tags: e.tags, text: typeof rendered === 'string' ? rendered : rendered.text });
     }
   };
@@ -43,7 +43,7 @@ describe('StS World', () => {
   it('archives external decisions and returns action state without duplicate wakeups', async () => {
     const { server, store, call, deliver, deferred } = await fixture();
     expect(store.latestCursor()).toBe(1);
-    expect(store.get(1)?.type).toBe('sts.state');
+    expect(store.get(1)?.type).toBe('sts-1.state');
     expect(store.get(1)?.origin).toBe('external');
     const initial = structuredClone(server.state);
     const receipt = await call('sts_do', { state: stateRef(initial), action: 1 });
@@ -66,7 +66,7 @@ describe('StS World', () => {
   it('records a connection failure, can observe after reconnect, and stops without closing the game', async () => {
     const { world, server, store, call, deliver } = await fixture();
     server.socket!.destroy();
-    await vi.waitFor(() => expect(store.get(2)?.type).toBe('sts.connection'));
+    await vi.waitFor(() => expect(store.get(2)?.type).toBe('sts-1.connection'));
     await call('sts_observe');
     expect(world.console().lamps?.[0].state).toBe('online');
     await world.stop();
@@ -79,7 +79,7 @@ describe('StS World', () => {
     await call('sts_do', { state: stateRef(server.state), action: 1 });
     world.onTurnEnded();
     await deliver();
-    expect(store.get(2)?.type).toBe('sts.decision');
+    expect(store.get(2)?.type).toBe('sts-1.decision');
     expect(store.get(2)!.text).toContain('仍等待操作');
     expect(store.get(2)!.text.length).toBeLessThan(80);
     world.onTurnEnded(); expect(store.latestCursor()).toBe(2);

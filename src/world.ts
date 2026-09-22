@@ -19,7 +19,7 @@ export interface StsWorldOptions {
 }
 
 export class StsWorld implements World {
-  readonly id = 'sts';
+  readonly id = 'sts-1';
   private bridge = new StsBridge();
   private host: WorldHost | null = null;
   private stopSignal = new AbortController();
@@ -36,7 +36,7 @@ export class StsWorld implements World {
     this.bridge.on('disconnect', (error: Error) => {
       if (this.state !== 'online') return;
       this.state = 'error'; this.detail = error.message;
-      void this.event('sts.connection', `游戏连接已断开：${error.message}。已提交动作的结果可能未确认，请先用 sts_observe 重连。`);
+      void this.event('sts-1.connection', `游戏连接已断开：${error.message}。已提交动作的结果可能未确认，请先用 sts_observe 重连。`);
     });
   }
   envPromptVars(): Record<string, string> { return {}; }
@@ -46,7 +46,7 @@ export class StsWorld implements World {
       lamps: [{ label: 'Sidecar', state: this.state, hint: this.detail || undefined }],
       badges: [{ label: '界面', value: this.bridge.snapshot?.screen ?? '—' }],
       config: [STS_CONFIG_GROUP],
-      promptDocs: [{ key: 'worlds.sts.envPrompt', title: '杀戮尖塔 · 环境提示词', description: '观察与动作回执的含义。',
+      promptDocs: [{ key: 'worlds.sts-1.envPrompt', title: '杀戮尖塔 · 环境提示词', description: '观察与动作回执的含义。',
         path: fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url)), role: 'envPrompt' }],
     };
   }
@@ -59,7 +59,7 @@ export class StsWorld implements World {
       try { await this.bridge.connect(this.opts.cfg.port, token, 1000); }
       catch (error) {
         if (this.opts.cfg.launch && (error as NodeJS.ErrnoException).code !== 'ECONNREFUSED') throw error;
-        const game = this.opts.cfg.launch ? launchGame(this.opts.cfg, token, join(this.opts.dataDir, 'sts')) : undefined;
+        const game = this.opts.cfg.launch ? launchGame(this.opts.cfg, token, join(this.opts.dataDir, 'sts-1')) : undefined;
         await connectGame(this.bridge, this.opts.cfg, token, this.stopSignal.signal, game);
       }
       this.state = 'online'; this.detail = ''; this.presented = null;
@@ -125,7 +125,7 @@ export class StsWorld implements World {
     if (!remind && this.presented && stateRef(snapshot) === stateRef(this.presented)) return;
     this.eventPending = true;
     const ticket = ++this.eventTicket;
-    this.host.pushDeferred({ type: remind ? 'sts.decision' : 'sts.state', senderKey: 'sts',
+    this.host.pushDeferred({ type: remind ? 'sts-1.decision' : 'sts-1.state', senderKey: 'sts-1',
       ...(remind ? {} : { tags: ['snapshot'] as const }),
       render: () => {
         if (ticket !== this.eventTicket) return null;
@@ -142,7 +142,7 @@ export class StsWorld implements World {
   }
   private async event(type: string, text: string): Promise<void> {
     try {
-      await this.host?.pushEvent({ type, source: 'sts', senderKey: 'sts', ts: nowIso(this.opts.timezone), text }, { trigger: 'flush' });
-    } catch (error) { this.host?.log.warn('sts.event', String(error)); }
+      await this.host?.pushEvent({ type, source: 'sts-1', senderKey: 'sts-1', ts: nowIso(this.opts.timezone), text }, { trigger: 'flush' });
+    } catch (error) { this.host?.log.warn('sts-1.event', String(error)); }
   }
 }

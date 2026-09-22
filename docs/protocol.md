@@ -108,9 +108,9 @@ decisions; deltas are not tagged as replaceable snapshots.
 Only one deferred state event is pending. Its renderer reads the latest cached
 sidecar snapshot at delivery and drops it if a tool has already presented that
 state. Complete state events and observations carry the `snapshot` tag.
-After a host turn that executed an action, `sts.decision` gives a short reminder
+After a host turn that executed an action, `sts-1.decision` gives a short reminder
 that the last decision still awaits input, without repeating the state body.
 This turn-boundary fallback preserves a decision opportunity when the host ends
 the tool loop at its round cap. A turn without an executed action produces none. Socket
-failures emit `sts.connection`. Screenshots are PNG framebuffer captures and
+failures emit `sts-1.connection`. Screenshots are PNG framebuffer captures and
 include the Mod-rendered cursor without moving the operating-system pointer.
