@@ -116,6 +116,17 @@ describe('semantic StS observations', () => {
     after.game!.screen_state = { rewards: [{ reward_type: 'GOLD', gold: 10 }] };
     expect(renderReceipt({ outcome: 'executed', snapshot: after }, before, action)).not.toContain('仍可重新打开选牌');
   });
+  it('states a collected item effect once in its new inventory location', () => {
+    const before = combat(); before.screen = 'COMBAT_REWARD'; delete before.game!.combat_state;
+    const potion = { id: 'reward-potion', name: '奖励药水', description: '试验药水效果。' };
+    before.game!.screen_state = { rewards: [{ reward_type: 'POTION', potion }] };
+    const after = structuredClone(before); after.revision++;
+    after.game!.potions = [potion]; after.game!.screen_state = { rewards: [] }; after.actions = [];
+    const action = { id: 'choose:COMBAT_REWARD:0', kind: 'reward', label: 'potion' };
+    const text = renderReceipt({ outcome: 'executed', snapshot: after }, before, action);
+    expect(text.split('\n')[0]).toBe('已执行：领取药水「奖励药水」。');
+    expect(text.match(/试验药水效果/g)).toHaveLength(1);
+  });
   it('renders event text, disabled choices and card-selection progress without duplicate option lists', () => {
     const s = combat(); s.screen = 'EVENT'; delete s.game!.combat_state;
     s.game!.screen_state = { event_name: '试验事件', body_text: '旅人提出交易。', options: [

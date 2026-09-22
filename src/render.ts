@@ -188,7 +188,10 @@ export function renderSnapshot(snapshot: StsSnapshot, full = false, previous?: S
 }
 
 export function renderReceipt(receipt: StsReceipt, before: StsSnapshot, action?: StsAction): string {
-  const label = action ? ['card_reward', 'select', 'boss_relic', 'buy', 'event'].includes(action.kind)
+  const reward = action?.kind === 'reward' ? list(object(before.game?.screen_state).rewards)[choiceIndex(action)] : undefined;
+  const label = reward?.potion ? `领取药水「${name(object(reward.potion))}」`
+    : reward?.relic ? `领取遗物「${name(object(reward.relic))}」`
+    : action ? ['card_reward', 'select', 'boss_relic', 'buy', 'event'].includes(action.kind)
     ? `${action.kind === 'buy' ? '购买' : '选择'}「${words(action.details?.name) || action.label}」` : actionText(action, before) : '游戏内输入';
   const reasons: Record<string, string> = {
     'Stale snapshot or game not ready': '状态已变化或尚在结算，未提交输入', 'Stale snapshot': '状态已变化，未提交输入',

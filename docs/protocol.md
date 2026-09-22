@@ -98,7 +98,9 @@ slaver variants; card receipts name newly entered hand cards.
 
 Within the same screen, floor, and session, successful receipts include only
 changed semantic sections. A new combat turn always repeats current enemy intents,
-even when unchanged. Removed effects are explicitly cleared. The latest
+even when unchanged. Removed effects are explicitly cleared. A collected
+potion or relic is named in the outcome; its effect appears in the
+inventory section once. The latest
 state code applies to retained action numbers as well as changed ones. Errors,
 screen changes, explicit observation, and context handoff produce self-contained
 decisions; deltas are not tagged as replaceable snapshots.
