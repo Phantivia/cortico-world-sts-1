@@ -106,6 +106,18 @@ describe('semantic StS observations', () => {
     s.actions = [0, 1].map(i => ({ id: `choose:COMBAT_REWARD:${i}`, kind: 'reward', label: 'reward' }));
     expect(renderSnapshot(s)).toContain('1 领取 25 金币'); expect(renderSnapshot(s)).toContain('竞争遗物 二选一');
   });
+  it('preserves card types from choice screens, explains energy symbols, and separates selection from confirmation', () => {
+    const s = combat(); s.screen = 'CARD_REWARD'; delete s.game!.combat_state;
+    const details = { uuid: 'reward-card', name: '试验能力', cost: 1, description: '获得 1 [R]。' };
+    s.game!.screen_state = { cards: [{ ...details, type: 'POWER' }] };
+    s.actions = [{ id: 'choose:CARD_REWARD:0', kind: 'card_reward', label: '试验能力', details }];
+    expect(renderSnapshot(s)).toContain('试验能力（能力，1费）：获得 1 能量。');
+    const text = renderReceipt({ outcome: 'executed', snapshot: s }, s, s.actions[0]);
+    expect(text.split('\n')[0]).toBe('已执行：选择「试验能力」。');
+    s.screen = 'GRID'; s.game!.screen_state = { confirm_up: true, for_upgrade: true, selected_cards: [], num_cards: 1 };
+    expect(renderSnapshot(s)).toContain('升级：等待确认。');
+    expect(renderSnapshot(s)).not.toContain('已选 0');
+  });
   it('does not claim an uncertain action succeeded and gives a self-contained recovery snapshot', () => {
     const s = combat();
     const text = renderReceipt({ outcome: 'unknown', reason: 'Action deadline reached; observe before another action', snapshot: s }, s, s.actions[0]);

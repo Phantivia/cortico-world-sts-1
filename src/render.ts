@@ -4,7 +4,7 @@ import type { StsAction, StsReceipt, StsSnapshot } from './protocol.ts';
 type Fields = Record<string, unknown>;
 const object = (value: unknown): Fields => value && typeof value === 'object' && !Array.isArray(value) ? value as Fields : {};
 const list = (value: unknown): Fields[] => Array.isArray(value) ? value.map(object) : [];
-const words = (value: unknown): string => typeof value === 'string' ? value.replace(/\s*NL\s*|\s*\n\s*/g, '；')
+const words = (value: unknown): string => typeof value === 'string' ? value.replace(/\[(?:R|G|B|W|E)\]/g, '能量').replace(/\s*NL\s*|\s*\n\s*/g, '；')
   .replace(/#[rgbypw]|[~@]/g, '').replace(/\s+([，。；！？])/g, '$1').replace(/([。！？；])；/g, '$1').trim() : '';
 const name = (value: Fields): string => words(value.name) || words(value.id) || '未知';
 const number = (value: unknown, fallback = 0): number => typeof value === 'number' ? value : fallback;
@@ -61,7 +61,10 @@ function actionText(action: StsAction, snapshot: StsSnapshot): string {
   const i = choiceIndex(action);
   if (action.kind === 'map') return d.x !== undefined ? node(d) : '前往首领';
   if (action.kind === 'event') return words(d.text) || words(list(s.options).find(o => o.choice_index === i)?.text) || action.label;
-  if (action.kind === 'card_reward' || action.kind === 'select') return d.name ? card(d) : action.label === 'bowl' ? '歌唱碗：增加最大生命' : action.label;
+  if (action.kind === 'card_reward' || action.kind === 'select') {
+    const visible = [...list(s.cards), ...list(s.hand)].find(c => c.uuid === d.uuid);
+    return d.name ? card({ ...visible, ...d }) : action.label === 'bowl' ? '歌唱碗：增加最大生命' : action.label;
+  }
   if (action.kind === 'boss_relic') return item(list(s.relics)[i] ?? d);
   if (action.kind === 'reward') {
     const reward = list(s.rewards)[i] ?? {};
@@ -142,7 +145,7 @@ function sections(snapshot: StsSnapshot, full: boolean): Map<string, string> {
   if (snapshot.screen === 'HAND_SELECT' || snapshot.screen === 'GRID') {
     const selected = list(s.selected ?? s.selected_cards);
     const purpose = s.for_upgrade ? '升级' : s.for_transform ? '变形' : s.for_purge ? '移除' : '选择';
-    put('selection', `${purpose}：已选 ${selected.length}／${s.max_cards ?? s.num_cards ?? '?'}${s.can_pick_zero || s.any_number ? '，允许少选' : ''}；${groupedCards(selected)}`);
+    put('selection', s.confirm_up ? `${purpose}：等待确认。` : `${purpose}：已选 ${selected.length}／${s.max_cards ?? s.num_cards ?? '?'}${s.can_pick_zero || s.any_number ? '，允许少选' : ''}；${groupedCards(selected)}`);
   }
   if (['GAME_OVER', 'VICTORY', 'DEATH'].includes(snapshot.screen)) put('result', `${s.victory ? '胜利' : '游戏结束'} · 得分 ${s.score ?? '?'}`);
   const actions = snapshot.actions.filter(a => !used.has(a.id));
@@ -180,14 +183,15 @@ export function renderSnapshot(snapshot: StsSnapshot, full = false, previous?: S
 }
 
 export function renderReceipt(receipt: StsReceipt, before: StsSnapshot, action?: StsAction): string {
-  const label = action ? actionText(action, before) : '游戏内输入';
+  const label = action ? ['card_reward', 'select', 'boss_relic', 'buy', 'event'].includes(action.kind)
+    ? `${action.kind === 'buy' ? '购买' : '选择'}「${words(action.details?.name) || action.label}」` : actionText(action, before) : '游戏内输入';
   const reasons: Record<string, string> = {
     'Stale snapshot or game not ready': '状态已变化或尚在结算，未提交输入', 'Stale snapshot': '状态已变化，未提交输入',
     'Snapshot changed before input': '光标移动期间状态发生变化，未提交输入',
     'Action is not available in this snapshot': '当前状态没有此操作', 'Another action is in flight': '上一个动作尚未结束',
     'Cancelled before input': '输入前已取消', 'Action deadline reached; observe before another action': '等待结算超时，请先观察再决定是否重试',
   };
-  const result = receipt.outcome === 'executed' ? `已执行：${label}。`
+  const result = receipt.outcome === 'executed' ? `已执行：${label.replace(/[。；]+$/, '')}。`
     : `${receipt.outcome === 'rejected' ? '未执行' : '结果未确认'}：${receipt.reason ? reasons[receipt.reason] ?? receipt.reason : label}。`;
   return `${result}\n${renderSnapshot(receipt.snapshot, false, receipt.outcome === 'executed' ? before : undefined)}`;
 }

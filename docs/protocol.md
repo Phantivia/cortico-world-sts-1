@@ -85,8 +85,9 @@ World stop disconnects and leaves the game available to the operator.
 
 Native JSON is rendered as Chinese descriptions. A hand card's effect appears
 once beside its available action numbers and targets; identical cards are grouped
-without merging their executable identities. Relics, powers, potions, event
-options, prices, selection counts, and hidden-intent markers retain their visible
+without merging their executable identities. Card types, energy symbols, relics,
+powers, potions, event options, prices, selection counts, confirmation prompts,
+and hidden-intent markers retain their visible
 meaning. Default pile output contains counts. Full observation adds grouped card
 contents and a row-by-row map whose edges point to the next row's columns.
 
