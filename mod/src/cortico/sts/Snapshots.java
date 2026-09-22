@@ -2,6 +2,7 @@ package cortico.sts;
 
 import com.google.gson.*;
 import com.megacrit.cardcrawl.cards.AbstractCard;
+import com.megacrit.cardcrawl.actions.GameActionManager;
 import com.megacrit.cardcrawl.core.AbstractCreature;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
@@ -21,12 +22,23 @@ final class Snapshots {
         JsonObject raw = new JsonParser().parse(GameStateConverter.getCommunicationState()).getAsJsonObject();
         JsonObject result = new JsonObject();
         boolean inGame = CommandExecutor.isInDungeon();
-        result.addProperty("ready", GameStateListener.isWaitingForCommand());
+        boolean ready = GameStateListener.isWaitingForCommand();
         JsonObject game = inGame ? raw.getAsJsonObject("game_state") : null;
         String screen = inGame ? game.get("screen_type").getAsString()
             : CardCrawlGame.mainMenuScreen == null ? "LOADING" : CardCrawlGame.mainMenuScreen.screen.name();
         if (inGame && screen.equals("NONE") && game.get("room_phase").getAsString().equals("COMBAT")) screen = "COMBAT";
         if (inGame) {
+            ready &= !AbstractDungeon.isFadingOut && !AbstractDungeon.isFadingIn;
+            if (screen.equals("COMBAT")) {
+                ready &= GameActionManager.turn > 0 && !AbstractDungeon.player.endTurnQueued
+                    && AbstractDungeon.actionManager.phase == GameActionManager.Phase.WAITING_ON_USER
+                    && AbstractDungeon.actionManager.currentAction == null
+                    && AbstractDungeon.actionManager.actions.isEmpty()
+                    && AbstractDungeon.actionManager.preTurnActions.isEmpty()
+                    && AbstractDungeon.actionManager.cardQueue.isEmpty();
+                for (AbstractMonster monster : AbstractDungeon.getMonsters().monsters)
+                    if (!monster.isDeadOrEscaped() && !monster.halfDead && monster.intent == AbstractMonster.Intent.DEBUG) ready = false;
+            }
             game.remove("seed");
             game.remove("current_action");
             game.remove("action_phase");
@@ -66,11 +78,33 @@ final class Snapshots {
             if (screen.equals("HAND_SELECT")) for (AbstractCard c : AbstractDungeon.handCardSelectScreen.selectedCards.group) cards.put(c.uuid.toString(), c);
             if (screen.equals("SHOP_SCREEN")) for (AbstractCard c : ChoiceScreenUtils.getShopScreenCards()) cards.put(c.uuid.toString(), c);
             enrichCards(game, cards, false);
+            if (screen.equals("GRID") && AbstractDungeon.gridSelectScreen.forUpgrade) {
+                JsonObject state = game.getAsJsonObject("screen_state");
+                for (JsonElement entry : state.getAsJsonArray("cards")) {
+                    JsonObject value = entry.getAsJsonObject();
+                    AbstractCard source = cards.get(value.get("uuid").getAsString());
+                    if (source.canUpgrade()) {
+                        AbstractCard preview = source.makeStatEquivalentCopy();
+                        preview.upgrade();
+                        JsonObject upgraded = card(preview, false);
+                        upgraded.remove("uuid");
+                        value.add("upgrade", upgraded);
+                    }
+                }
+                AbstractCard preview = AbstractDungeon.gridSelectScreen.upgradePreviewCard;
+                if (AbstractDungeon.gridSelectScreen.confirmScreenUp && preview != null) {
+                    JsonObject upgraded = card(preview, false);
+                    upgraded.remove("uuid");
+                    state.add("upgrade_preview", upgraded);
+                }
+            }
             enrichItems(game);
         }
+        result.addProperty("ready", ready);
         result.addProperty("screen", screen);
         result.add("game", game == null ? JsonNull.INSTANCE : game);
-        result.add("actions", Actions.list());
+        if (!ready) Actions.current.clear();
+        result.add("actions", ready ? Actions.list() : new JsonArray());
         String fingerprint = GSON.toJson(result);
         if (!fingerprint.equals(previous)) { revision++; previous = fingerprint; }
         result.addProperty("revision", revision);
@@ -92,6 +126,7 @@ final class Snapshots {
         int magic = modified && c.magicNumber >= 0 ? c.magicNumber : c.baseMagicNumber;
         JsonObject o = new JsonObject();
         o.addProperty("uuid", c.uuid.toString()); o.addProperty("id", c.cardID); o.addProperty("name", c.name);
+        o.addProperty("type", c.type.name());
         o.addProperty("cost", c.costForTurn); o.addProperty("target", c.target.name());
         o.addProperty("description", text(c.rawDescription.replace("!D!", Integer.toString(damage))
             .replace("!B!", Integer.toString(block)).replace("!M!", Integer.toString(magic))));

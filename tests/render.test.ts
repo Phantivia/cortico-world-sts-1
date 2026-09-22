@@ -82,6 +82,40 @@ describe('semantic StS observations', () => {
     const delta = renderSnapshot(after, false, before);
     expect(delta).toContain('自身状态：无'); expect(delta).toContain('充能球：无');
   });
+  it('repeats current intents across turns and identifies newly entered cards without exposing UUIDs', () => {
+    const before = combat(), after = structuredClone(before);
+    const state = after.game!.combat_state as { turn: number; hand: Record<string, unknown>[]; monsters: Record<string, unknown>[] };
+    state.turn++; after.revision++;
+    state.hand = [{ uuid: 'fresh-card', name: '新抽入的牌', cost: 0, description: '试验效果。' }];
+    state.monsters[0].id = 'SlaverBlue';
+    const sameTurn = structuredClone(after); (sameTurn.game!.combat_state as typeof state).turn--;
+    const text = renderReceipt({ outcome: 'executed', snapshot: after }, sameTurn, before.actions.at(-1));
+    expect(text).toContain('攻击 4×2'); expect(text).toContain('试验敌人（蓝衣）');
+    const draw = renderReceipt({ outcome: 'executed', snapshot: after }, before, before.actions[0]);
+    expect(draw).toContain('新入手：新抽入的牌'); expect(draw).not.toContain('fresh-card');
+  });
+  it('marks the current map node and preserves both selectable and confirmed upgrade previews', () => {
+    const s = combat(); delete s.game!.combat_state; s.screen = 'MAP';
+    s.game!.screen_state = { current_node: { x: 2, y: 6, symbol: 'M' } };
+    expect(renderSnapshot(s)).toContain('当前位置：2,6 战斗');
+    const original = { uuid: 'upgrade-card', name: '试验牌', cost: 2, type: 'SKILL', description: '原效果。' };
+    const upgrade = { name: '试验牌+', cost: 1, type: 'SKILL', description: '升级效果。' };
+    s.screen = 'GRID'; s.game!.screen_state = { cards: [{ ...original, upgrade }], for_upgrade: true, num_cards: 1 };
+    s.actions = [{ id: 'choose:GRID:0', kind: 'select', label: '试验牌', details: original }];
+    expect(renderSnapshot(s)).toContain('试验牌（技能，2费）：原效果。 → 试验牌+（技能，1费）：升级效果。');
+    s.game!.screen_state = { confirm_up: true, for_upgrade: true, upgrade_preview: upgrade }; s.actions = [];
+    expect(renderSnapshot(s)).toContain('确认升级为 试验牌+（技能，1费）：升级效果。');
+  });
+  it('explains a skipped card reward that the game still allows reopening', () => {
+    const before = combat(); before.screen = 'CARD_REWARD'; delete before.game!.combat_state;
+    const after = structuredClone(before); after.screen = 'COMBAT_REWARD'; after.revision++;
+    after.game!.screen_state = { rewards: [{ reward_type: 'CARD' }] };
+    after.actions = [{ id: 'choose:COMBAT_REWARD:0', kind: 'reward', label: 'cards' }];
+    const action = { id: 'cancel', kind: 'cancel', label: 'skip' };
+    expect(renderReceipt({ outcome: 'executed', snapshot: after }, before, action)).toContain('仍可重新打开选牌');
+    after.game!.screen_state = { rewards: [{ reward_type: 'GOLD', gold: 10 }] };
+    expect(renderReceipt({ outcome: 'executed', snapshot: after }, before, action)).not.toContain('仍可重新打开选牌');
+  });
   it('renders event text, disabled choices and card-selection progress without duplicate option lists', () => {
     const s = combat(); s.screen = 'EVENT'; delete s.game!.combat_state;
     s.game!.screen_state = { event_name: '试验事件', body_text: '旅人提出交易。', options: [

@@ -63,7 +63,8 @@ function actionText(action: StsAction, snapshot: StsSnapshot): string {
   if (action.kind === 'event') return words(d.text) || words(list(s.options).find(o => o.choice_index === i)?.text) || action.label;
   if (action.kind === 'card_reward' || action.kind === 'select') {
     const visible = [...list(s.cards), ...list(s.hand)].find(c => c.uuid === d.uuid);
-    return d.name ? card({ ...visible, ...d }) : action.label === 'bowl' ? '歌唱碗：增加最大生命' : action.label;
+    return d.name ? card({ ...visible, ...d }) + (visible?.upgrade ? ` → ${card(object(visible.upgrade))}` : '')
+      : action.label === 'bowl' ? '歌唱碗：增加最大生命' : action.label;
   }
   if (action.kind === 'boss_relic') return item(list(s.relics)[i] ?? d);
   if (action.kind === 'reward') {
@@ -114,7 +115,8 @@ function sections(snapshot: StsSnapshot, full: boolean): Map<string, string> {
     put('monsters', '敌人：\n' + list(combat.monsters).map((m, i) => {
       const intent = intents[words(m.intent)] ?? words(m.intent);
       const damage = words(m.intent).startsWith('ATTACK') && number(m.move_adjusted_damage, -1) >= 0 ? ` ${m.move_adjusted_damage}×${m.move_hits ?? 1}` : '';
-      return `敌${m.index ?? i} ${name(m)} · ${m.current_hp}/${m.max_hp}生命 · ${m.block ?? 0}格挡 · ${m.is_gone ? '已离场' : m.half_dead ? '暂时倒下' : intent + damage}${powers(m.powers) ? '；' + powers(m.powers) : ''}`;
+      const variant = ({ SlaverBlue: '蓝衣', SlaverRed: '红衣' } as Record<string, string>)[words(m.id)];
+      return `敌${m.index ?? i} ${name(m)}${variant ? '（' + variant + '）' : ''} · ${m.current_hp}/${m.max_hp}生命 · ${m.block ?? 0}格挡 · ${m.is_gone ? '已离场' : m.half_dead ? '暂时倒下' : intent + damage}${powers(m.powers) ? '；' + powers(m.powers) : ''}`;
     }).join('\n'));
     if (snapshot.screen !== 'HAND_SELECT') {
       const hand = new Map<string, { count: number; choices: string[] }>();
@@ -146,6 +148,7 @@ function sections(snapshot: StsSnapshot, full: boolean): Map<string, string> {
     const selected = list(s.selected ?? s.selected_cards);
     const purpose = s.for_upgrade ? '升级' : s.for_transform ? '变形' : s.for_purge ? '移除' : '选择';
     put('selection', s.confirm_up ? `${purpose}：等待确认。` : `${purpose}：已选 ${selected.length}／${s.max_cards ?? s.num_cards ?? '?'}${s.can_pick_zero || s.any_number ? '，允许少选' : ''}；${groupedCards(selected)}`);
+    if (s.upgrade_preview) put('upgrade', `确认升级为 ${card(object(s.upgrade_preview))}`);
   }
   if (['GAME_OVER', 'VICTORY', 'DEATH'].includes(snapshot.screen)) put('result', `${s.victory ? '胜利' : '游戏结束'} · 得分 ${s.score ?? '?'}`);
   const actions = snapshot.actions.filter(a => !used.has(a.id));
@@ -158,6 +161,7 @@ function sections(snapshot: StsSnapshot, full: boolean): Map<string, string> {
     if (unavailable.length) put('unaffordable', '金币不足：' + unavailable.map(i => `${name(i)} ${i.price}金币${full && i.description ? '（' + words(i.description) + '）' : ''}`).join('；'));
   }
   if (snapshot.screen === 'MAP' || full) {
+    if (s.current_node) put('position', `当前位置：${node(object(s.current_node))}`);
     const rows = new Map<number, string[]>();
     for (const n of list(g.map)) {
       const y = number(n.y), row = rows.get(y) ?? [];
@@ -177,7 +181,8 @@ export function renderSnapshot(snapshot: StsSnapshot, full = false, previous?: S
   const delta = !full && previous?.sessionId === snapshot.sessionId && previous.screen === snapshot.screen
     && previous.game?.floor === snapshot.game?.floor;
   const current = sections(snapshot, full), before = delta ? sections(previous!, false) : new Map<string, string>();
-  const lines = [...current].filter(([key, text]) => !delta || before.get(key) !== text).map(([, text]) => text);
+  const newTurn = delta && object(snapshot.game?.combat_state).turn !== object(previous?.game?.combat_state).turn;
+  const lines = [...current].filter(([key, text]) => !delta || before.get(key) !== text || newTurn && key === 'monsters').map(([, text]) => text);
   if (delta) for (const [key] of before) if (!current.has(key)) lines.push(({ orbs: '充能球：无', keys: '钥匙：无', disabled: '不可选项已清空。', unaffordable: '金币不足项已清空。' })[key as 'orbs'] ?? '界面内容已更新。');
   return `[StS ${stateRef(snapshot)} · ${screenName(snapshot)} · ${snapshot.ready ? '可操作' : '结算中'}${delta ? ' · 变化' : ''}]\n${lines.join('\n') || '状态无变化，操作编号沿用上一份。'}`;
 }
@@ -193,5 +198,12 @@ export function renderReceipt(receipt: StsReceipt, before: StsSnapshot, action?:
   };
   const result = receipt.outcome === 'executed' ? `已执行：${label.replace(/[。；]+$/, '')}。`
     : `${receipt.outcome === 'rejected' ? '未执行' : '结果未确认'}：${receipt.reason ? reasons[receipt.reason] ?? receipt.reason : label}。`;
-  return `${result}\n${renderSnapshot(receipt.snapshot, false, receipt.outcome === 'executed' ? before : undefined)}`;
+  const skipped = receipt.outcome === 'executed' && action?.kind === 'cancel' && before.screen === 'CARD_REWARD'
+    && receipt.snapshot.screen === 'COMBAT_REWARD' && receipt.snapshot.actions.some(a => a.kind === 'reward'
+      && list(object(receipt.snapshot.game?.screen_state).rewards)[choiceIndex(a)]?.reward_type === 'CARD');
+  const oldHand = new Set(list(object(before.game?.combat_state).hand).map(c => c.uuid));
+  const entered = list(object(receipt.snapshot.game?.combat_state).hand).filter(c => !oldHand.has(c.uuid));
+  const drawn = receipt.outcome === 'executed' && before.screen === 'COMBAT' && receipt.snapshot.screen === 'COMBAT' && entered.length
+    ? `\n新入手：${groupedCards(entered)}` : '';
+  return `${result}${skipped ? '\n未选取卡牌；返回战利品后仍可重新打开选牌。' : ''}${drawn}\n${renderSnapshot(receipt.snapshot, false, receipt.outcome === 'executed' ? before : undefined)}`;
 }

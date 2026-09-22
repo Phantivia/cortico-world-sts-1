@@ -53,6 +53,9 @@ other card locations use base values, including upgrades, so played-card visual
 resets do not change a decision revision. Screen
 state includes full event text, disabled options, prices, rewards, selection
 counts, and selected cards. Face-down matching cards expose only their position.
+Upgrade grids include the game's card upgrade preview, including its changed
+cost and effect. Confirmation repeats the selected upgraded card. A combat
+decision waits for the action queues and opening intent initialization to finish.
 
 Draw-pile order, enemy move IDs/history, RNG state, event outcomes, and invisible
 intents are removed before serialization. Runic Dome hides intent damage and hit
@@ -89,10 +92,13 @@ without merging their executable identities. Card types, energy symbols, relics,
 powers, potions, event options, prices, selection counts, confirmation prompts,
 and hidden-intent markers retain their visible
 meaning. Default pile output contains counts. Full observation adds grouped card
-contents and a row-by-row map whose edges point to the next row's columns.
+contents and a row-by-row map whose edges point to the next row's columns. Map
+decisions identify the current node. Enemy names distinguish visible red/blue
+slaver variants; card receipts name newly entered hand cards.
 
 Within the same screen, floor, and session, successful receipts include only
-changed semantic sections. Removed effects are explicitly cleared. The latest
+changed semantic sections. A new combat turn always repeats current enemy intents,
+even when unchanged. Removed effects are explicitly cleared. The latest
 state code applies to retained action numbers as well as changed ones. Errors,
 screen changes, explicit observation, and context handoff produce self-contained
 decisions; deltas are not tagged as replaceable snapshots.

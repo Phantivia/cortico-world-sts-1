@@ -58,6 +58,8 @@ Model-facing text uses Chinese game descriptions and short action numbers.
 Cards with identical visible properties share one description; each playable
 card/target retains its own action number. Draw/discard/exhaust piles default to
 counts. The full observation groups duplicate cards and preserves map edges.
+Maps mark the current node, upgrade selections show their resulting cards, and
+each new combat turn repeats current enemy intents.
 Native JSON, UUIDs, and duplicated card metadata remain inside the sidecar.
 
 Receipts in the same room and screen report changed sections. Omitted sections
