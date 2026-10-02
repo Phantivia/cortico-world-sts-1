@@ -95,8 +95,7 @@ pnpm build:mod '<game directory>'
 pnpm check:extension '<extension directory>'
 ```
 
-Tests and typechecking resolve `cortico/*` to a framework checkout at `../BOT/src`
-(see `tsconfig.json` and `vitest.config.ts`); adjust both paths for another layout.
+During development `cortico/*` resolves through the `cortico` devDependency (the framework package on npm). To develop against unreleased framework changes, run `pnpm link <framework checkout>` here; it writes an `overrides` entry into `pnpm-workspace.yaml`, so revert that before committing.
 Tests use real loopback sockets and the framework's JSONL event store. They cover
 framing, authentication, stale actions, cancellation, timeout, reconnect, and
 World events. Game/Mod compatibility requires a local game check; automated tests
