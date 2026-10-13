@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Slay the Spire World for Cortico with a Mod sidecar and an in-game cursor",
+  "author": "Phantivia",
   "license": "MIT",
   "repository": {
     "type": "git",
