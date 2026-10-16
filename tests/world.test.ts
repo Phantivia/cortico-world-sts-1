@@ -68,7 +68,7 @@ describe('StS World', () => {
     server.socket!.destroy();
     await vi.waitFor(() => expect(store.get(2)?.type).toBe('sts-1.connection'));
     await call('sts_observe');
-    expect(world.console().lamps?.[0].state).toBe('online');
+    expect(world.webUi().lamps?.[0].state).toBe('online');
     await world.stop();
     expect(server.mutations).toBe(0);
     await expect(call('sts_observe')).rejects.toThrow('not started');

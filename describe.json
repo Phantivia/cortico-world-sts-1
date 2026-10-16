@@ -1,0 +1,190 @@
+{
+  "tools": [
+    {
+      "name": "sts_observe",
+      "description": "读取当前局面和操作编号。已有事件或回执时直接使用；状态不清楚时重读。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string",
+            "enum": [
+              "decision",
+              "full"
+            ],
+            "description": "默认返回完整的当前决策；full 另含主牌组、各牌堆内容及全图。"
+          }
+        },
+        "additionalProperties": false
+      },
+      "tags": [
+        "read",
+        "snapshot"
+      ],
+      "summary": {
+        "zh": "读取当前局面和可选操作的编号,可另含牌组、各牌堆与全图。",
+        "en": "Reads the current situation and the numbered actions, optionally with the deck, card piles and the full map."
+      }
+    },
+    {
+      "name": "sts_do",
+      "description": "使用最新状态码和操作编号，执行一个动作并等待结算。回执报告结果与变化；每轮只调用一次。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "最近快照标题中的状态码，原样复制。"
+          },
+          "action": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "快照中标出的操作编号。出牌编号可位于手牌行，药水编号可位于药水行。"
+          }
+        },
+        "required": [
+          "state",
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "tags": [
+        "act"
+      ],
+      "summary": {
+        "zh": "按编号执行一个操作(出牌、用药水、选路线等),等结算后回执结果和变化。",
+        "en": "Performs one numbered action such as playing a card, using a potion or choosing a path, and reports the result once it resolves."
+      }
+    },
+    {
+      "name": "sts_capture",
+      "description": "读取游戏渲染画面，含内部光标，返回 PNG。",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ],
+      "summary": {
+        "zh": "截取游戏画面,带游戏内光标。",
+        "en": "Takes a screenshot of the game, including the in-game cursor."
+      }
+    },
+    {
+      "name": "sts_input",
+      "description": "语义动作未覆盖界面时的兜底输入。kind=click 使用 1920×1080 左上原点坐标和 left/right；kind=key 使用游戏按键名。执行后读取回执确认状态。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "最近快照标题中的状态码，原样复制。"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "click",
+              "key"
+            ]
+          },
+          "x": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1920
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1080
+          },
+          "button": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "enum": [
+              "confirm",
+              "cancel",
+              "map",
+              "deck",
+              "draw_pile",
+              "discard_pile",
+              "exhaust_pile",
+              "end_turn",
+              "up",
+              "down",
+              "left",
+              "right",
+              "drop_card",
+              "card_1",
+              "card_2",
+              "card_3",
+              "card_4",
+              "card_5",
+              "card_6",
+              "card_7",
+              "card_8",
+              "card_9",
+              "card_10"
+            ]
+          }
+        },
+        "required": [
+          "state",
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      "tags": [
+        "act"
+      ],
+      "summary": {
+        "zh": "编号操作覆盖不到的界面上,直接点击坐标或按游戏按键。",
+        "en": "Clicks a screen position or presses a game key on screens the numbered actions do not cover."
+      }
+    }
+  ],
+  "events": [
+    {
+      "type": "sts-1.state",
+      "description": {
+        "zh": "游戏局面变了,附新的局面和操作编号。",
+        "en": "The game state changed, with the new situation and numbered actions."
+      },
+      "trigger": "flush",
+      "tags": [
+        "snapshot"
+      ]
+    },
+    {
+      "type": "sts-1.decision",
+      "description": {
+        "zh": "一轮动作结束后游戏仍在等待输入的提醒。",
+        "en": "A reminder, after a turn that acted, that the game is still waiting for input."
+      },
+      "trigger": "flush"
+    },
+    {
+      "type": "sts-1.connection",
+      "description": {
+        "zh": "与游戏里的 Mod 的连接断开;已提交动作的结果可能没确认。",
+        "en": "The connection to the in-game mod dropped; results of submitted actions may be unconfirmed."
+      },
+      "trigger": "flush"
+    }
+  ],
+  "prompts": [
+    {
+      "key": "worlds.sts-1.envPrompt",
+      "title": "杀戮尖塔 · 环境提示词",
+      "role": "envPrompt",
+      "content": "你通过 StS World 玩杀戮尖塔，自行决定路线、出牌与奖励。\r\n快照标题 [StS 状态码 · 界面] 给出 state；操作编号可能位于手牌、药水或操作行。\r\n例如「出牌 2→敌0、3→敌1」表示操作 2 和 3 是同一张牌的两个目标。\r\n用 sts_do({state:\"标题中的状态码\",action:2}) 执行一个动作，每轮只调用一次。\r\n编号只在对应状态码下有效；下一次动作使用最新回执标题中的 state。\r\n\r\n「已执行」表示输入已提交并到达下一决策点；选牌弹窗也属于决策点。\r\n标有「变化」的回执只更新列出的部分，未列内容和操作编号沿用前文。\r\n新回合总会重列敌人当前意图；锻造选项的箭头后是升级预览。\r\n切换界面、首次连接、上下文交接以及 sts_observe 都给出完整的当前决策状态。\r\n事件或回执已足够时直接行动；不清楚时用 sts_observe 重读。\r\nsts_observe({detail:\"full\"}) 另列主牌组、各牌堆内容和全图；相同牌合并计数，抽牌堆无序。\r\n「未执行」未提交输入；「结果未确认」须先观察，避免重复操作。错误回执附有新快照时可直接使用。\r\nsts-1.decision 只提醒游戏仍等待输入，不要求继续已经决定停止的游戏。\r\n\r\n牌面、意图和说明来自可见游戏状态，未知结果保持未知。\r\nsts_capture 返回带内置光标的游戏画面。语义动作未覆盖的界面可用 sts_input 兜底，\r\n点击坐标为 1920×1080 左上原点；输入与光标均在游戏内部，不移动系统指针。\r\n"
+    }
+  ]
+}
