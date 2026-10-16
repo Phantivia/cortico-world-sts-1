@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { ToolCallContext, ToolDef, ToolOutcome, World, WorldConsoleDecl, WorldHost } from 'cortico/core/types.ts';
+import type { ToolCallContext, ToolDef, ToolOutcome, World, WorldWebUiDecl, WorldHost } from 'cortico/core/types.ts';
 import { nowIso } from 'cortico/core/util.ts';
 import { STS_CONFIG_GROUP, type StsConfigSection } from './config.ts';
 import { StsBridge } from './bridge.ts';
@@ -41,7 +41,7 @@ export class StsWorld implements World {
   }
   envPromptVars(): Record<string, string> { return {}; }
   tools(): ToolDef[] { return STS_TOOL_DECLS.map(decl => ({ ...decl, handler: (args, ctx) => this.call(decl.name, args, ctx) })); }
-  console(): WorldConsoleDecl {
+  webUi(): WorldWebUiDecl {
     return {
       lamps: [{ label: 'Sidecar', state: this.state, hint: this.detail || undefined }],
       badges: [{ label: '界面', value: this.bridge.snapshot?.screen ?? '—' }],
